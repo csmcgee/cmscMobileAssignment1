@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Activity Recognition</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_sensor">Sensor</string>
+    <string name="title_activity_sensor">Activity Sensor</string>
+    <string name="action_feed">Feed</string>
+
+</resources>
