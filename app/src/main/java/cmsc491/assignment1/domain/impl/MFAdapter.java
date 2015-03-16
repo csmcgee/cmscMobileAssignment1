@@ -1,4 +1,4 @@
-package cmsc491.assignment1.domain.views;
+package cmsc491.assignment1.domain.impl;
 
 import android.view.LayoutInflater;
 import android.view.View;

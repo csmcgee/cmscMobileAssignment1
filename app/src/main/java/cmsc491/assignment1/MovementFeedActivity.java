@@ -1,8 +1,12 @@
 package cmsc491.assignment1;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -18,15 +22,28 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import cmsc491.assignment1.domain.activityRecog.Movement;
-import cmsc491.assignment1.domain.views.MFAdapter;
+import cmsc491.assignment1.domain.impl.MFAdapter;
 
 
 public class MovementFeedActivity extends ActionBarActivity {
     private ListView listView;
     private Handler mHandler;
+    private MovementRecogService mService;
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MovementRecogService.MRBinder binder = (MovementRecogService.MRBinder) service;
+            mService = binder.getService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
 
     // use this adapter to let list view know that it has been updated
-    public final MFAdapter mfAdapter = new MFAdapter();
+    public static final MFAdapter mfAdapter = new MFAdapter();
 
     public static final String FILE_NAME = "Movements.txt";
 
@@ -35,8 +52,6 @@ public class MovementFeedActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movement_feed);
-
-        boolean check = isExternalStorageWritable();
 
         // Get ListView object from xml
         listView = (ListView) findViewById(R.id.listFeed);
@@ -65,17 +80,6 @@ public class MovementFeedActivity extends ActionBarActivity {
 
         });
 
-        mHandler = new Handler();
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // EXAMPLE:
-                // every 15 seconds notify data has changed
-                mfAdapter.updateFeed();
-                mfAdapter.notifyDataSetChanged();
-                mHandler.postDelayed(this, 10 * 1000);
-            }
-        }, 10 * 1000);
 
         if(isExternalStorageWritable()){
             File file = new File(getExternalFilesDir(null), FILE_NAME);
@@ -91,8 +95,15 @@ public class MovementFeedActivity extends ActionBarActivity {
 
     }
 
-    public void onStop(){
+    protected void onStart(){
+        super.onStart();
+        Intent intent = new Intent(this, MovementRecogService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    protected void onStop(){
         super.onStop();
+        unbindService(mConnection);
         // close file writer/reader here.
     }
 

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="cmsc491.assignment1" >
+
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <service
+        android:name=".domain.MovementRecogService"
+        android:enabled="true" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -20,6 +26,12 @@
             android:name=".SensorActivity"
             android:label="@string/title_activity_sensor" >
         </activity>
+
+        <service
+            android:name=".MovementRecogService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>
