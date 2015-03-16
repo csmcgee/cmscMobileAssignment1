@@ -35,6 +35,11 @@ public class MFAdapter extends BaseAdapter {
         return position;
     }
 
+    public void notifyDataSetChanged(){
+        super.notifyDataSetChanged();
+
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         if(convertView == null){
@@ -51,6 +56,10 @@ public class MFAdapter extends BaseAdapter {
         interval.setText(movement.getIntervalString());
 
         return convertView;
+    }
+
+    public void updateFeed(){
+        movementFeed = GetMovementData();
     }
 
     /**
