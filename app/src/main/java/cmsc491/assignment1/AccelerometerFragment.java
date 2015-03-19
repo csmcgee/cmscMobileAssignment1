@@ -18,7 +18,7 @@ import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
 public class AccelerometerFragment extends Fragment implements SensorEventListener {
-        private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler();
     private Runnable mTimer1;
 
     private SensorManager sensorManager;
