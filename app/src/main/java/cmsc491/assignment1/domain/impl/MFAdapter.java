@@ -58,6 +58,10 @@ public class MFAdapter extends BaseAdapter {
         return convertView;
     }
 
+    public void pushNewMovement(Movement movement){
+        movementFeed.add(0,movement);
+    }
+
     public void updateFeed(){
         movementFeed = GetMovementData();
     }
@@ -66,34 +70,32 @@ public class MFAdapter extends BaseAdapter {
      * Data provider method used to generate fake data for UI testing.
      */
     private static List<Movement> GetMovementData(){
-    Random rand = new Random();
-    ArrayList<Movement> movements = new ArrayList<Movement>();
-    for(int i = 0; i < 20; i+=2){
-        DateTime startTime;
-        DateTime endTime;
+        Random rand = new Random();
+        List<Movement> movements = new ArrayList<Movement>();
+        for(int i = 0; i < 20; i+=2){
+            DateTime startTime;
+            DateTime endTime;
 
-        DateTime jDate = new DateTime();
-        startTime = jDate.plusMinutes(i);
-        endTime = jDate.plusMinutes(i+2);
+            DateTime jDate = new DateTime();
+            startTime = jDate.plusMinutes(i);
+            endTime = jDate.plusMinutes(i+2);
 
-        Movement.Type type = null;
-        switch(rand.nextInt(3)){
-            case 0:
-                type = Movement.Type.SITTING;
-                break;
-            case 1:
-                type = Movement.Type.WALKING;
-                break;
-            case 2:
-                type = Movement.Type.SLEEPING;
+            Movement.Type type = null;
+            switch(rand.nextInt(3)){
+                case 0:
+                    type = Movement.Type.SITTING;
+                    break;
+                case 1:
+                    type = Movement.Type.WALKING;
+                    break;
+                case 2:
+                    type = Movement.Type.SLEEPING;
+            }
+
+            movements.add(new Movement(type, startTime, endTime));
         }
 
-        movements.add(new Movement(type, startTime, endTime));
-
+        Collections.reverse(movements);
+        return movements;
     }
-
-    Collections.reverse(movements);
-
-    return movements;
-}
 }

@@ -12,14 +12,17 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
 public class AccelerometerFragment extends Fragment implements SensorEventListener {
-        private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler();
     private Runnable mTimer1;
+    private Button mAccelBtn;
+    private boolean toggle = true;
 
     private SensorManager sensorManager;
     private Sensor mAccelerometer;
@@ -37,6 +40,7 @@ public class AccelerometerFragment extends Fragment implements SensorEventListen
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_accelerometer, container, false);
         Context context = view.getContext();
+        mAccelBtn = (Button) view.findViewById(R.id.accelBtn);
         sensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
         mAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         sensorManager.registerListener(this, mAccelerometer,SensorManager.SENSOR_DELAY_NORMAL);
@@ -55,23 +59,36 @@ public class AccelerometerFragment extends Fragment implements SensorEventListen
         graph.addSeries(xSeries);
         graph.addSeries(ySeries);
         graph.addSeries(zSeries);
+
+        mTimer1 = new Runnable(){
+            @Override
+            public void run() {
+                xSeries.appendData(new DataPoint(timer, (double) xaccl), true, 100);
+                ySeries.appendData(new DataPoint(timer++, (double) yaccl),true, 100);
+                zSeries.appendData(new DataPoint(timer++, (double) zaccl), true, 100);
+                mHandler.postDelayed(this, 200);
+            }
+        };
+
+        mAccelBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(toggle){
+                    mAccelBtn.setText("Stop");
+                    mHandler.postDelayed(mTimer1,200);
+                }else{
+                    mAccelBtn.setText("Start");
+                    mHandler.removeCallbacks(mTimer1);
+                }
+                toggle = !toggle;
+            }
+        });
+
         return view;
     }
 
     public void onResume(){
         super.onResume();
-
-        mTimer1 = new Runnable(){
-            @Override
-            public void run() {
-                xSeries.appendData(new DataPoint(timer, (double) xaccl), true, 30);
-                ySeries.appendData(new DataPoint(timer++, (double) yaccl),true, 30);
-                zSeries.appendData(new DataPoint(timer++, (double) zaccl), true, 30);
-                mHandler.postDelayed(this, 100);
-            }
-        };
-
-        mHandler.postDelayed(mTimer1, 100);
     }
 
     public void onPause(){
@@ -82,9 +99,14 @@ public class AccelerometerFragment extends Fragment implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            xaccl = event.values[0];
-            yaccl = event.values[1];
-            zaccl = event.values[2];
+            if(Math.abs(xaccl - event.values[0]) > 1)
+                xaccl = event.values[0];
+
+            if(Math.abs(yaccl - event.values[1]) > 1)
+                yaccl = event.values[1];
+
+            if(Math.abs(zaccl - event.values[2]) > 1)
+                zaccl = event.values[2];
         }
     }
 
