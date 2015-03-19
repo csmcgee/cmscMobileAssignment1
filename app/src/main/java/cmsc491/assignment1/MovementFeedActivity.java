@@ -16,6 +16,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.joda.time.DateTime;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,7 +29,8 @@ import cmsc491.assignment1.domain.impl.MFAdapter;
 
 public class MovementFeedActivity extends ActionBarActivity {
     private ListView listView;
-    private Handler mHandler;
+    private final MovementRecogPoller mrPoller = new MovementRecogPoller();
+
     private MovementRecogService mService;
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
@@ -97,13 +100,19 @@ public class MovementFeedActivity extends ActionBarActivity {
 
     protected void onStart(){
         super.onStart();
+        // Spawn service
         Intent intent = new Intent(this, MovementRecogService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        mrPoller.run();
     }
 
+    /**
+     * No longer visible and should release all resources here.
+     */
     protected void onStop(){
         super.onStop();
         unbindService(mConnection);
+        mrPoller.stop();
         // close file writer/reader here.
     }
 
@@ -147,5 +156,40 @@ public class MovementFeedActivity extends ActionBarActivity {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Used to poll service for movement type activity and place it in
+     * list view.
+     */
+    private class MovementRecogPoller implements Runnable {
+        private Handler mHandler;
+
+        public MovementRecogPoller(){
+            mHandler = new Handler();
+        }
+
+        // Beware of first case, perhaps refactor to not poll on first attempt
+        public void pollService(){
+            DateTime startTime = new DateTime();
+            DateTime endTime = startTime.minusMinutes(2);
+
+            // change method to possibly replace entire arraylist of movements with a given array list
+            mfAdapter.pushNewMovement(new Movement(Movement.Type.WALKING, startTime, endTime));
+
+            mfAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void run() {
+            pollService();
+            // every two minutes
+            mHandler.postDelayed(this, 120 * 1000);
+        }
+
+        public void stop(){
+            mHandler.removeCallbacks(this);
+        }
     }
 }
