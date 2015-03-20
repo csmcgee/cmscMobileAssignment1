@@ -8,11 +8,17 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 public class MovementRecogService extends Service {
     private MRBinder mBinder = new MRBinder();
@@ -21,25 +27,37 @@ public class MovementRecogService extends Service {
     private Sensor accelerometer;
     private Sensor gyroscope;
     private Integer[] statuses;
-    private int ELAPSEDTIME = 15;
+    private int iter_counter = 0;
 
+    private PrintWriter printWriter;
+    private File file;
 
-//    public MovementRecogService() {
-//    }
-
-
+    private final int ELAPSED_TIME_SECONDS = 15;
+    private final int NUM_OF_ITERATIONS = 120 / ELAPSED_TIME_SECONDS;
+    public static final String FILE_NAME = "Movements.txt";
 
     @Override
     public IBinder onBind(Intent intent) {
+        // Prepare file system
+        if(isExternalStorageWritable()){
+            file = new File(getExternalFilesDir(null), FILE_NAME);
+            try{
+                if(!file.exists()){
+                    file.createNewFile();
+                }
+                printWriter = new PrintWriter(new FileWriter(file));
+                // read from file system to retrieve last 10 movements
 
+            }catch(Exception e){
+                Log.e("MovementRecog", "Unable to write to file system.");
+            }
 
+        }
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        final accelerometerInfo accel = new accelerometerInfo();
-        final gyroscopeInfo gyro = new gyroscopeInfo();
+        final AccelerometerInfo accel = new AccelerometerInfo();
+        final GyroscopeInfo gyro = new GyroscopeInfo();
         statuses = new Integer[3];
-
-
 
         sensorManager.registerListener(accel, accelerometer,SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(gyro, gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
@@ -48,9 +66,6 @@ public class MovementRecogService extends Service {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                // TODO: Refactor to - The main activity at regular intervals should poll for the set of activities from the service and write it to external storage.
-                // every 15 seconds notify data has changed
-
 
                 if(Math.abs(accel.getX()) > 0){
                     statuses[0]++;
@@ -59,17 +74,40 @@ public class MovementRecogService extends Service {
 //                    if(gyro.getY())
                 }
 
+                // After algorithm has run, increment and check iteration counter
+                if(iter_counter++ >= NUM_OF_ITERATIONS){
+                    // make decision of type of movement
+                    // write to file system
+                    // update data structure
+                }
 
 
-                MovementFeedActivity.mfAdapter.updateFeed();
-                MovementFeedActivity.mfAdapter.notifyDataSetChanged();
-                mHandler.postDelayed(this, ELAPSEDTIME * 1000);
+                mHandler.postDelayed(this, ELAPSED_TIME_SECONDS * 1000);
             }
         }, 0);
+
+
         return mBinder;
     }
 
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
     public class MRBinder extends Binder {
         MovementRecogService getService() {
@@ -77,7 +115,7 @@ public class MovementRecogService extends Service {
         }
     }
 
-    public class accelerometerInfo implements SensorEventListener {
+    private class AccelerometerInfo implements SensorEventListener {
 
 
         private float xaccl= 0, yaccl = 0, zaccl = 0;
@@ -106,7 +144,7 @@ public class MovementRecogService extends Service {
         }
     }
 
-    public class gyroscopeInfo implements SensorEventListener{
+    private class GyroscopeInfo implements SensorEventListener{
 
 
         private float xgyro= 0, ygyro = 0, zgyro = 0;

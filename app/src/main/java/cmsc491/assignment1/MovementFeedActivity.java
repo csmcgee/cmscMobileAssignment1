@@ -48,8 +48,6 @@ public class MovementFeedActivity extends ActionBarActivity {
     // use this adapter to let list view know that it has been updated
     public static final MFAdapter mfAdapter = new MFAdapter();
 
-    public static final String FILE_NAME = "Movements.txt";
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,19 +80,6 @@ public class MovementFeedActivity extends ActionBarActivity {
             }
 
         });
-
-
-        if(isExternalStorageWritable()){
-            File file = new File(getExternalFilesDir(null), FILE_NAME);
-            try {
-                PrintWriter pw = new PrintWriter(new FileWriter(file));
-                pw.write("Hello World.");
-                pw.close();
-            } catch (IOException e) {
-                // can't write
-                e.printStackTrace();
-            }
-        }
 
     }
 
@@ -139,26 +124,6 @@ public class MovementFeedActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-
     /**
      * Used to poll service for movement type activity and place it in
      * list view.
@@ -172,11 +137,8 @@ public class MovementFeedActivity extends ActionBarActivity {
 
         // Beware of first case, perhaps refactor to not poll on first attempt
         public void pollService(){
-            DateTime startTime = new DateTime();
-            DateTime endTime = startTime.minusMinutes(2);
 
-            // change method to possibly replace entire arraylist of movements with a given array list
-            mfAdapter.pushNewMovement(new Movement(Movement.Type.WALKING, startTime, endTime));
+            // poll service
 
             mfAdapter.notifyDataSetChanged();
         }
