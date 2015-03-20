@@ -36,6 +36,10 @@ public class MovementRecogService extends Service {
     private final int NUM_OF_ITERATIONS = 120 / ELAPSED_TIME_SECONDS;
     public static final String FILE_NAME = "Movements.txt";
 
+
+    float rMatrix[] = new float[9];
+    float angles[] = new float[3];
+
     @Override
     public IBinder onBind(Intent intent) {
         // Prepare file system
@@ -59,6 +63,8 @@ public class MovementRecogService extends Service {
         final GyroscopeInfo gyro = new GyroscopeInfo();
         statuses = new Integer[3];
 
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
         sensorManager.registerListener(accel, accelerometer,SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(gyro, gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
 
@@ -124,10 +130,6 @@ public class MovementRecogService extends Service {
 
         private float xaccl= 0, yaccl = 0, zaccl = 0;
 
-        public void onCreate(){
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        }
-
         @Override
         public void onSensorChanged(SensorEvent event) {
             if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
@@ -153,17 +155,21 @@ public class MovementRecogService extends Service {
 
         private float xgyro= 0, ygyro = 0, zgyro = 0;
 
-        public void onCreate(){
-            gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        }
 
         @Override
         public void onSensorChanged(SensorEvent event) {
 
-            if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+            if(event.sensor.getType() == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR){
                 xgyro = event.values[0];
                 ygyro = event.values[1];
                 zgyro = event.values[2];
+
+                sensorManager.getRotationMatrixFromVector(rMatrix, event.values);
+                sensorManager.getOrientation(rMatrix, event.values);
+
+                Log.i("MovementRecog", String.format("x: %.3f\t y: %.3f\t z: %.3f", event.values[0]*(180f/Math.PI),
+                        event.values[1]*(180f/Math.PI),
+                        event.values[2]*(180f/Math.PI)));
             }
         }
 
