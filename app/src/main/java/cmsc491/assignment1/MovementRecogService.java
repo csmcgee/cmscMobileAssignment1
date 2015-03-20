@@ -33,17 +33,27 @@ public class MovementRecogService extends Service {
     private Integer[] statuses;
     private MovementFileManager movementFileManager;
     private int iter_counter = 0;
+    private int data_iter = 0;
 
-    private final String FILE_NAME = "Movement.txt";
     private final int ELAPSED_TIME_SECONDS = 15;
     private final int NUM_OF_ITERATIONS = 120 / ELAPSED_TIME_SECONDS;
 
+    private final int NUM_OF_COORDS = 3;
+    private final int NUM_DATA_POINTS = 60;
+    public static final String FILE_NAME = "Movements.txt";
+    private float xVariance = 0.0f;
+    private float yVariance = 0.0f;
+    private float zVariance = 0.0f;
 
+    float accelData[][] = new float[NUM_OF_COORDS][NUM_DATA_POINTS];
     float rMatrix[] = new float[9];
     float angles[] = new float[3];
 
     @Override
     public IBinder onBind(Intent intent) {
+
+
+
         // Prepare file system
         movementFileManager = new MovementFileManager(FILE_NAME);
         movementFileManager.initializeFile();
@@ -60,16 +70,28 @@ public class MovementRecogService extends Service {
         sensorManager.registerListener(gyro, gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
 
 
+
+
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                Log.i("MovementRecog", "Iteration hit.");
-                if(Math.abs(accel.getX()) > 0){
-                    statuses[0]++;
+               // Log.i("MovementRecog", "Iteration hit.");
+
+                //Insert variance logic here with accelData points;
+                accelData[0][data_iter] = accel.getX();
+                accelData[1][data_iter] = accel.getY();
+                accelData[2][data_iter] = accel.getZ();
+                data_iter++;
+
+                if(data_iter >= 60) {
+
+                    xVariance = calcVariance(accelData[0], calcMean(accelData[0]));
+                    Log.i("XVAR", String.valueOf(xVariance));
+                    yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
+                    zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
+                    data_iter = 0;
                 }
-                else{
-//                    if(gyro.getY())
-                }
+
 
                 // After algorithm has run, increment and check iteration counter
                 if(iter_counter++ >= NUM_OF_ITERATIONS){
@@ -77,22 +99,52 @@ public class MovementRecogService extends Service {
                     // reset counter
                     iter_counter = 0;
 
+
                     // make decision of type of movement
+                    //Putting in a base value of 1 for the variance check here
+                    if(xVariance >= 1f){
+                        //Person has been moving.
+                    }
+                    else{
+                        //Person has been sitting/laying down. Gyroscope?
+                    }
+
                     // write to file system
                     // update data structure
                 }
 
 
-                mHandler.postDelayed(this, ELAPSED_TIME_SECONDS * 1000);
+                mHandler.postDelayed(this, 250);
             }
         }, 0);
+
 
 
         return mBinder;
     }
 
-    public void onDestroy(){
+    public void onDestroy() {
         movementFileManager.closeFile();
+    }
+
+    //Calculate means on float array
+    public float calcMean(float[] points){
+        float sum = 0.0f;
+        for(float a : points)
+            sum += a;
+        return sum/points.length;
+    }
+
+    //Calculate variances of float array
+    public float calcVariance(float[] points, float mean){
+
+
+        float sums = 0.0f;
+        for(float f:points){
+            sums += (f - mean) * (f - mean);
+        }
+        return sums/(points.length -1);
+
     }
 
 
@@ -125,12 +177,20 @@ public class MovementRecogService extends Service {
         public float getX(){
             return xaccl;
         }
+        public float getY(){
+            return yaccl;
+        }
+        public float getZ(){
+            return zaccl;
+        }
     }
 
     private class GyroscopeInfo implements SensorEventListener{
 
 
         private float xgyro= 0, ygyro = 0, zgyro = 0;
+
+
 
 
         @Override
