@@ -66,7 +66,7 @@ public class MovementRecogService extends Service {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-
+                Log.i("MovementRecog", "Iteration hit.");
                 if(Math.abs(accel.getX()) > 0){
                     statuses[0]++;
                 }
@@ -76,6 +76,10 @@ public class MovementRecogService extends Service {
 
                 // After algorithm has run, increment and check iteration counter
                 if(iter_counter++ >= NUM_OF_ITERATIONS){
+                    Log.i("MovementRecog", "Decision period reached.");
+                    // reset counter
+                    iter_counter = 0;
+
                     // make decision of type of movement
                     // write to file system
                     // update data structure
