@@ -37,6 +37,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             MovementRecogService.MRBinder binder = (MovementRecogService.MRBinder) service;
             mService = binder.getService();
+            mrPoller.run();
         }
 
         @Override
@@ -88,7 +89,6 @@ public class MovementFeedActivity extends ActionBarActivity {
         // Spawn service
         Intent intent = new Intent(this, MovementRecogService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        mrPoller.run();
     }
 
     /**
@@ -139,7 +139,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void pollService(){
 
             // poll service
-
+            mfAdapter.setMovements(mService.getRecentMovements());
             mfAdapter.notifyDataSetChanged();
         }
 

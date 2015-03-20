@@ -14,10 +14,25 @@ public class Movement {
     private Type movementType;
     private DateTime startTime, endTime;
 
+    private static final String SITTING = "Sitting";
+    private static final String WALKING = "Walking";
+    private static final String SLEEPING = "Sleeping";
+
     public Movement(Type movementType, DateTime startTime, DateTime endTime){
         this.movementType = movementType;
         this.startTime = startTime;
         this.endTime = endTime;
+    }
+
+    public static Type stringToMovementType(String movementType){
+        if(SITTING.equals(movementType))
+            return Type.SITTING;
+        else if(SLEEPING.equals(movementType))
+            return Type.SLEEPING;
+        else if(WALKING.equals(movementType))
+            return Type.WALKING;
+
+        return null;
     }
 
     // TODO: Move activities to resources file.
@@ -37,7 +52,7 @@ public class Movement {
         return type;
     }
 
-    public String getIntervalString(){
+    public static DateTimeFormatter getDateTimeFormatter(){
         DateTimeFormatter format = new DateTimeFormatterBuilder()
                 .appendClockhourOfHalfday(1)
                 .appendLiteral(':')
@@ -45,7 +60,11 @@ public class Movement {
                 .appendLiteral(' ')
                 .appendHalfdayOfDayText()
                 .toFormatter();
+        return format;
+    }
 
+    public String getIntervalString(){
+        DateTimeFormatter format = getDateTimeFormatter();
         return String.format("%s - %s", startTime.toString(format), endTime.toString(format));
     }
 

@@ -58,7 +58,7 @@ public class MFAdapter extends BaseAdapter {
         return convertView;
     }
 
-    public void setMovements(ArrayList<Movement> movements){
+    public void setMovements(List<Movement> movements){
         movementFeed = movements;
     }
 
