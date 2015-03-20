@@ -15,10 +15,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import org.joda.time.DateTime;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+
+import cmsc491.assignment1.domain.activityRecog.Movement;
 
 public class MovementRecogService extends Service {
     private MRBinder mBinder = new MRBinder();
@@ -27,14 +31,12 @@ public class MovementRecogService extends Service {
     private Sensor accelerometer;
     private Sensor gyroscope;
     private Integer[] statuses;
+    private MovementFileManager movementFileManager;
     private int iter_counter = 0;
 
-    private PrintWriter printWriter;
-    private File file;
-
+    private final String FILE_NAME = "Movement.txt";
     private final int ELAPSED_TIME_SECONDS = 15;
     private final int NUM_OF_ITERATIONS = 120 / ELAPSED_TIME_SECONDS;
-    public static final String FILE_NAME = "Movements.txt";
 
 
     float rMatrix[] = new float[9];
@@ -43,20 +45,9 @@ public class MovementRecogService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         // Prepare file system
-        if(isExternalStorageWritable()){
-            file = new File(getExternalFilesDir(null), FILE_NAME);
-            try{
-                if(!file.exists()){
-                    file.createNewFile();
-                }
-                printWriter = new PrintWriter(new FileWriter(file));
-                // read from file system to retrieve last 10 movements
+        movementFileManager = new MovementFileManager(FILE_NAME);
+        movementFileManager.initializeFile();
 
-            }catch(Exception e){
-                Log.e("MovementRecog", "Unable to write to file system.");
-            }
-
-        }
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         final AccelerometerInfo accel = new AccelerometerInfo();
@@ -100,24 +91,10 @@ public class MovementRecogService extends Service {
         return mBinder;
     }
 
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
+    public void onDestroy(){
+        movementFileManager.closeFile();
     }
 
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
-    }
 
     public class MRBinder extends Binder {
         MovementRecogService getService() {
@@ -180,6 +157,62 @@ public class MovementRecogService extends Service {
 
         public float getY(){
             return ygyro;
+        }
+    }
+
+    private class MovementFileManager {
+        private String fileName;
+        private PrintWriter printWriter;
+        private File file;
+
+        public MovementFileManager(String fileName){
+            this.fileName = fileName;
+        }
+
+        public void initializeFile(){
+            if(isExternalStorageWritable()){
+                file = new File(getExternalFilesDir(null), fileName);
+                try{
+                    if(!file.exists()){
+                        file.createNewFile();
+                    }
+                    printWriter = new PrintWriter(new FileWriter(file, true));
+                    // read from file system to retrieve last 10 movements
+
+                }catch(Exception e){
+                    Log.e("MovementRecog", "Unable to write to file system.");
+                }
+
+            }
+        }
+
+        public void writeMovement(Movement m){
+            if(isExternalStorageWritable()){
+                printWriter.append(m.toString());
+            }
+        }
+
+        /* Checks if external storage is available for read and write */
+        private boolean isExternalStorageWritable() {
+            String state = Environment.getExternalStorageState();
+            if (Environment.MEDIA_MOUNTED.equals(state)) {
+                return true;
+            }
+            return false;
+        }
+
+        public void closeFile(){
+            printWriter.close();
+        }
+
+        /* Checks if external storage is available to at least read */
+        private boolean isExternalStorageReadable() {
+            String state = Environment.getExternalStorageState();
+            if (Environment.MEDIA_MOUNTED.equals(state) ||
+                    Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+                return true;
+            }
+            return false;
         }
     }
 }

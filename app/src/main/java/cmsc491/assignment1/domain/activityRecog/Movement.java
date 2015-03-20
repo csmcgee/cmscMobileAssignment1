@@ -50,7 +50,7 @@ public class Movement {
     }
 
     public String toString(){
-        return String.format("%s %s", getTypeString(), getIntervalString());
+        return String.format("%s %s\n", getTypeString(), getIntervalString());
     }
 
 }
