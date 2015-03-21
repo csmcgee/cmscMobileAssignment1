@@ -53,7 +53,7 @@ public class MovementRecogService extends Service {
 
     private final int ELAPSED_TIME_SECONDS = 15;
     // For now make a decision every minute
-    private final int NUM_OF_ITERATIONS = 4; //120 / ELAPSED_TIME_SECONDS;
+    private final int NUM_OF_ITERATIONS = 4;
     private final int NUM_OF_AXIS = 3;
     private final int NUM_DATA_POINTS = 60;
     private final int WALKING = 0;
@@ -96,8 +96,6 @@ public class MovementRecogService extends Service {
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-               // Log.i("MovementRecog", "Iteration hit.");
-
                 //Insert variance logic here with accelData points;
                 accelData[0][data_iter] = accel.getX();
                 accelData[1][data_iter] = accel.getY();
@@ -148,7 +146,7 @@ public class MovementRecogService extends Service {
                     else if(points[SLEEPING] > points[WALKING] && points[SLEEPING] > points[SITTING])
                         type = Movement.Type.SLEEPING;
                     else
-                        type = Movement.Type.WALKING; // TODO: ADD LOCATION CHECK FOR FINAL TIEBREAKER.
+                        type = Movement.Type.WALKING; // TIE-BREAKER
 
                     /**
                      * Review points and make final decision here.
@@ -164,8 +162,6 @@ public class MovementRecogService extends Service {
                     mHandler.postDelayed(this, 250); // If not decision time then wait 250 milliseconds.
             }
         }, 0);
-
-
 
         return mBinder;
     }
@@ -225,9 +221,7 @@ public class MovementRecogService extends Service {
         }
 
         @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
+        public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 
         public float getX(){
             return xaccl;
@@ -240,8 +234,7 @@ public class MovementRecogService extends Service {
         }
     }
 
-    private class GyroscopeInfo implements SensorEventListener{
-
+    private class GyroscopeInfo implements SensorEventListener {
 
         /**
          * x - Tangential to the ground pointing approx East.
@@ -257,11 +250,6 @@ public class MovementRecogService extends Service {
                 sensorManager.getRotationMatrixFromVector(rMatrix, event.values);
                 sensorManager.getOrientation(rMatrix, event.values);
 
-                Log.i("MovementRecog", String.format("x: %.3f\t y: %.3f\t z: %.3f",
-                        event.values[0]*(180f/Math.PI),
-                        event.values[1]*(180f/Math.PI),
-                        event.values[2]*(180f/Math.PI)));
-
                 xgyro = (float) (event.values[0]*(180f/Math.PI));
                 ygyro = (float) (event.values[1]*(180f/Math.PI));
                 zgyro = (float) (event.values[2]*(180f/Math.PI));
@@ -269,14 +257,10 @@ public class MovementRecogService extends Service {
         }
 
         @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-        }
+        public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 
         public float getXAngle() { return xgyro; }
-        public float getYAngle(){
-            return ygyro;
-        }
+        public float getYAngle() { return ygyro; }
         public float getZAngle() { return zgyro; }
     }
 
@@ -297,7 +281,6 @@ public class MovementRecogService extends Service {
                         file.createNewFile();
                     }
                     printWriter = new PrintWriter(new FileWriter(file, true));
-                    // read from file system to retrieve last 10 movements
 
                 }catch(Exception e){
                     Log.e("MovementRecog", "Unable to write to file system.");
@@ -329,6 +312,7 @@ public class MovementRecogService extends Service {
 
                         Movement m = new Movement(Movement.stringToMovementType(type),
                                 formatter.parseDateTime(start), formatter.parseDateTime(end));
+
                         // only keep most recent 10
                         movements.add(m);
                         if(movements.size() > 10){
