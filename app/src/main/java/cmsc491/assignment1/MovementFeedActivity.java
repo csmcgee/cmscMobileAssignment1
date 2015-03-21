@@ -8,14 +8,13 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import cmsc491.assignment1.domain.activityRecog.Movement;
 import cmsc491.assignment1.domain.impl.MFAdapter;
 
 
@@ -31,6 +30,7 @@ public class MovementFeedActivity extends ActionBarActivity {
             mService = binder.getService();
 
             // when service is available start polling
+            Log.i("MovementRecog", "Starting poller.");
             mrPoller.run();
         }
 
@@ -68,6 +68,14 @@ public class MovementFeedActivity extends ActionBarActivity {
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
+    protected void onResume(){
+        super.onResume();
+
+        // if service is already bound
+        if(mService != null)
+            mrPoller.run();
+    }
+
     protected void onPause(){
         super.onPause();
         // stop polling to update activity on pause.
@@ -79,8 +87,14 @@ public class MovementFeedActivity extends ActionBarActivity {
      */
     protected void onStop(){
         super.onStop();
-        unbindService(mConnection);
+        Log.i("MovementRecog", "Activity stopped (hidden).");
         mrPoller.stop();
+    }
+
+    protected void onDestroy(){
+        super.onDestroy();
+        Log.i("MovementRecog", "Activity destroyed");
+        unbindService(mConnection);
     }
 
     @Override

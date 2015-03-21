@@ -11,17 +11,15 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -72,9 +70,15 @@ public class MovementRecogService extends Service {
     float rMatrix[] = new float[9];
     float angles[][] = new float[NUM_OF_AXIS][NUM_DATA_POINTS];
 
+    private PowerManager pm;
+    private PowerManager.WakeLock wl;
 
     @Override
     public IBinder onBind(Intent intent) {
+        Log.i("MovementRecog", "MovementRecogService onBind()");
+        pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MovementRecog");
+        wl.acquire();
 
         // Prepare file system
         movementFileManager = new MovementFileManager(FILE_NAME);
@@ -166,12 +170,13 @@ public class MovementRecogService extends Service {
         return mBinder;
     }
 
-    public List<Movement> getRecentMovements(){
-        return recentMovements;
+    public void onDestroy(){
+        super.onDestroy();
+        wl.release();
     }
 
-    public void onDestroy() {
-        movementFileManager.closeFile();
+    public List<Movement> getRecentMovements(){
+        return recentMovements;
     }
 
     private void trackMovement(Movement m){
@@ -280,7 +285,6 @@ public class MovementRecogService extends Service {
                     if(!file.exists()){
                         file.createNewFile();
                     }
-                    printWriter = new PrintWriter(new FileWriter(file, true));
 
                 }catch(Exception e){
                     Log.e("MovementRecog", "Unable to write to file system.");
@@ -290,9 +294,15 @@ public class MovementRecogService extends Service {
         }
 
         public void writeMovement(Movement m){
-            if(isExternalStorageWritable()){
-                printWriter.append(m.toString());
+            try {
+                printWriter = new PrintWriter(new FileWriter(file, true));
+                if(isExternalStorageWritable()){
+                    printWriter.append(m.toString());
+                }
+            }catch(Exception e){
+                Log.i("MovementRecog", "Unable to write to file.");
             }
+            printWriter.close();
         }
 
         public List<Movement> retrieveRecentMovements(){
@@ -325,10 +335,6 @@ public class MovementRecogService extends Service {
                 Log.i("MovementRecog", "Could not read file.");
             }
             return movements;
-        }
-
-        public void closeFile(){
-            printWriter.close();
         }
 
         // Permission methods
