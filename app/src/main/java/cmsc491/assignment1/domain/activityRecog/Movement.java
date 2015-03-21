@@ -36,9 +36,9 @@ public class Movement {
     }
 
     // TODO: Move activities to resources file.
-    public String getTypeString(){
+    public static String getTypeString(Type movement){
         String type = "";
-        switch(movementType) {
+        switch(movement) {
             case SITTING:
                 type = "Sitting";
                 break;
@@ -50,6 +50,10 @@ public class Movement {
                 break;
         }
         return type;
+    }
+
+    public String getTypeString(){
+        return getTypeString(movementType);
     }
 
     public static DateTimeFormatter getDateTimeFormatter(){
@@ -69,7 +73,7 @@ public class Movement {
     }
 
     public String toString(){
-        return String.format("%s %s\n", getTypeString(), getIntervalString());
+        return String.format("%s %s\n", getTypeString(movementType), getIntervalString());
     }
 
 }

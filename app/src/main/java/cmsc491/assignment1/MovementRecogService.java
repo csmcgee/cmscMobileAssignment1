@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class MovementRecogService extends Service {
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private Sensor gyroscope;
-    private Integer[] statuses;
+    private Integer[] points = {0, 0, 0};
     private MovementFileManager movementFileManager;
     private int iter_counter = 0;
     private int data_iter = 0;
@@ -55,6 +56,9 @@ public class MovementRecogService extends Service {
     private final int NUM_OF_ITERATIONS = 4; //120 / ELAPSED_TIME_SECONDS;
     private final int NUM_OF_AXIS = 3;
     private final int NUM_DATA_POINTS = 60;
+    private final int WALKING = 0;
+    private final int SITTING = 1;
+    private final int SLEEPING = 2;
 
     private float xVariance = 0.0f;
     private float yVariance = 0.0f;
@@ -68,6 +72,7 @@ public class MovementRecogService extends Service {
     float rMatrix[] = new float[9];
     float angles[][] = new float[NUM_OF_AXIS][NUM_DATA_POINTS];
 
+
     @Override
     public IBinder onBind(Intent intent) {
 
@@ -79,7 +84,6 @@ public class MovementRecogService extends Service {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accel = new AccelerometerInfo();
         gyro = new GyroscopeInfo();
-        statuses = new Integer[3];
 
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
@@ -111,19 +115,20 @@ public class MovementRecogService extends Service {
                     yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
                     zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
 
-                    yAngleMean = calcMean(angles[1]);
+                    yAngleMean = Math.abs(calcMean(angles[1]));
                     Log.i("MovementRecog", String.format("Y Angle mean: %f", yAngleMean));
 
                     /**
                      * Point assigning logic here.
                      */
-                    if(xVariance >= 1f){
-                        //Person has been moving.
+                    if(yVariance >= 1f){ // Person was moving/walking.
+                        points[WALKING]++;
                     }
-                    else{
-                        //Person has been sitting/laying down. Gyroscope?
+                    else if(yAngleMean >= 45 && yAngleMean <= 135 ){ // Person was sitting
+                        points[SITTING]++;
+                    }else if(yAngleMean < 45 || yAngleMean > 135){ // Person was sleeping
+                        points[SLEEPING]++;
                     }
-
                     data_iter = 0;
                     iter_counter++;
                 }
@@ -134,14 +139,24 @@ public class MovementRecogService extends Service {
                     // reset counter
                     iter_counter = 0;
 
+                    Movement.Type type;
+
+                    if(points[WALKING] > points[SITTING] && points[WALKING] > points[SLEEPING])
+                        type = Movement.Type.WALKING;
+                    else if(points[SITTING] > points[WALKING] && points[SITTING] > points[SLEEPING])
+                        type = Movement.Type.SITTING;
+                    else if(points[SLEEPING] > points[WALKING] && points[SLEEPING] > points[SITTING])
+                        type = Movement.Type.SLEEPING;
+                    else
+                        type = Movement.Type.WALKING; // TODO: ADD LOCATION CHECK FOR FINAL TIEBREAKER.
+
                     /**
                      * Review points and make final decision here.
                      */
-                    trackMovement(new Movement(Movement.Type.SITTING, time, new DateTime()));
+                    trackMovement(new Movement(type, time, new DateTime()));
+                    Log.i("MovementRecog", String.format("Movement type determined: %s", Movement.getTypeString(type)));
                     time = new DateTime(); // reinitialize date/time for next interval
-
-                    // write to file system
-                    // update data structure
+                    Arrays.fill(points, 0);
 
                     // After decision is made immediately call itself to start next period.
                     mHandler.postDelayed(this, 0);
