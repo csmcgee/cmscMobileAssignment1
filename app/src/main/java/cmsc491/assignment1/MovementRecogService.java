@@ -111,7 +111,7 @@ public class MovementRecogService extends Service {
                 // runs every 15 seconds
                 if(data_iter >= 60) {
                     xVariance = calcVariance(accelData[0], calcMean(accelData[0]));
-                    Log.i("XVAR", String.valueOf(xVariance));
+                    Log.i("MovementRecog", String.format("Y Variance: %f", yVariance));
                     yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
                     zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
 
