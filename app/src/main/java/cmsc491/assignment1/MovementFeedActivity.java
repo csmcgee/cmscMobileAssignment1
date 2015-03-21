@@ -91,6 +91,11 @@ public class MovementFeedActivity extends ActionBarActivity {
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
+    protected void onPause(){
+        super.onPause();
+        mrPoller.stop();
+    }
+
     /**
      * No longer visible and should release all resources here.
      */
@@ -147,7 +152,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void run() {
             pollService();
             // every two minutes
-            mHandler.postDelayed(this, 120 * 1000);
+            mHandler.postDelayed(this, 60 * 1000);
         }
 
         public void stop(){

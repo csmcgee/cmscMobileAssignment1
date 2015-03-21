@@ -18,7 +18,7 @@ import cmsc491.assignment1.domain.activityRecog.Movement;
 
 public class MFAdapter extends BaseAdapter {
 
-    private List<Movement> movementFeed = GetMovementData();
+    private List<Movement> movementFeed = new ArrayList<Movement>();
 
     @Override
     public int getCount() {
@@ -37,7 +37,6 @@ public class MFAdapter extends BaseAdapter {
 
     public void notifyDataSetChanged(){
         super.notifyDataSetChanged();
-
     }
 
     @Override
@@ -60,42 +59,5 @@ public class MFAdapter extends BaseAdapter {
 
     public void setMovements(List<Movement> movements){
         movementFeed = movements;
-    }
-
-    public void updateFeed(){
-        movementFeed = GetMovementData();
-    }
-
-    /**
-     * Data provider method used to generate fake data for UI testing.
-     */
-    private static List<Movement> GetMovementData(){
-        Random rand = new Random();
-        List<Movement> movements = new ArrayList<Movement>();
-        for(int i = 0; i < 20; i+=2){
-            DateTime startTime;
-            DateTime endTime;
-
-            DateTime jDate = new DateTime();
-            startTime = jDate.plusMinutes(i);
-            endTime = jDate.plusMinutes(i+2);
-
-            Movement.Type type = null;
-            switch(rand.nextInt(3)){
-                case 0:
-                    type = Movement.Type.SITTING;
-                    break;
-                case 1:
-                    type = Movement.Type.WALKING;
-                    break;
-                case 2:
-                    type = Movement.Type.SLEEPING;
-            }
-
-            movements.add(new Movement(type, startTime, endTime));
-        }
-
-        Collections.reverse(movements);
-        return movements;
     }
 }

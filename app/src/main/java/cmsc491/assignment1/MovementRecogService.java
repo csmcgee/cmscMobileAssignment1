@@ -60,11 +60,13 @@ public class MovementRecogService extends Service {
     private float yVariance = 0.0f;
     private float zVariance = 0.0f;
 
+    private float yAngleMean = 0.0f;
+
     public static final String FILE_NAME = "Movements.txt";
 
     float accelData[][] = new float[NUM_OF_AXIS][NUM_DATA_POINTS];
     float rMatrix[] = new float[9];
-    float angles[] = new float[3];
+    float angles[][] = new float[NUM_OF_AXIS][NUM_DATA_POINTS];
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -96,6 +98,10 @@ public class MovementRecogService extends Service {
                 accelData[0][data_iter] = accel.getX();
                 accelData[1][data_iter] = accel.getY();
                 accelData[2][data_iter] = accel.getZ();
+
+                angles[0][data_iter] = gyro.getXAngle();
+                angles[1][data_iter] = gyro.getYAngle();
+                angles[2][data_iter] = gyro.getZAngle();
                 data_iter++;
 
                 // runs every 15 seconds
@@ -104,6 +110,20 @@ public class MovementRecogService extends Service {
                     Log.i("XVAR", String.valueOf(xVariance));
                     yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
                     zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
+
+                    yAngleMean = calcMean(angles[1]);
+                    Log.i("MovementRecog", String.format("Y Angle mean: %f", yAngleMean));
+
+                    /**
+                     * Point assigning logic here.
+                     */
+                    if(xVariance >= 1f){
+                        //Person has been moving.
+                    }
+                    else{
+                        //Person has been sitting/laying down. Gyroscope?
+                    }
+
                     data_iter = 0;
                     iter_counter++;
                 }
@@ -114,17 +134,11 @@ public class MovementRecogService extends Service {
                     // reset counter
                     iter_counter = 0;
 
-                    movementFileManager.writeMovement(new Movement(Movement.Type.SLEEPING, time, new DateTime()));
+                    /**
+                     * Review points and make final decision here.
+                     */
+                    trackMovement(new Movement(Movement.Type.SITTING, time, new DateTime()));
                     time = new DateTime(); // reinitialize date/time for next interval
-
-                    // make decision of type of movement
-                    //Putting in a base value of 1 for the variance check here
-                    if(xVariance >= 1f){
-                        //Person has been moving.
-                    }
-                    else{
-                        //Person has been sitting/laying down. Gyroscope?
-                    }
 
                     // write to file system
                     // update data structure
@@ -147,6 +161,14 @@ public class MovementRecogService extends Service {
 
     public void onDestroy() {
         movementFileManager.closeFile();
+    }
+
+    private void trackMovement(Movement m){
+        movementFileManager.writeMovement(m);
+        recentMovements.add(0, m);
+
+        if(recentMovements.size() > 10)
+            recentMovements.remove(recentMovements.size()-1);
     }
 
     //Calculate means on float array
@@ -217,10 +239,6 @@ public class MovementRecogService extends Service {
         public void onSensorChanged(SensorEvent event) {
 
             if(event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR){
-                xgyro = event.values[0];
-                ygyro = event.values[1];
-                zgyro = event.values[2];
-
                 sensorManager.getRotationMatrixFromVector(rMatrix, event.values);
                 sensorManager.getOrientation(rMatrix, event.values);
 
@@ -228,6 +246,10 @@ public class MovementRecogService extends Service {
                         event.values[0]*(180f/Math.PI),
                         event.values[1]*(180f/Math.PI),
                         event.values[2]*(180f/Math.PI)));
+
+                xgyro = (float) (event.values[0]*(180f/Math.PI));
+                ygyro = (float) (event.values[1]*(180f/Math.PI));
+                zgyro = (float) (event.values[2]*(180f/Math.PI));
             }
         }
 
@@ -236,9 +258,11 @@ public class MovementRecogService extends Service {
 
         }
 
+        public float getXAngle() { return xgyro; }
         public float getYAngle(){
             return ygyro;
         }
+        public float getZAngle() { return zgyro; }
     }
 
     private class MovementFileManager {
