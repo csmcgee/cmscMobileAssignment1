@@ -73,7 +73,7 @@ public class MovementRecogService extends Service {
         statuses = new Integer[3];
 
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         sensorManager.registerListener(accel, accelerometer,SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(gyro, gyroscope,SensorManager.SENSOR_DELAY_NORMAL);
 
@@ -218,7 +218,7 @@ public class MovementRecogService extends Service {
         @Override
         public void onSensorChanged(SensorEvent event) {
 
-            if(event.sensor.getType() == Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR){
+            if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
                 xgyro = event.values[0];
                 ygyro = event.values[1];
                 zgyro = event.values[2];
@@ -226,9 +226,9 @@ public class MovementRecogService extends Service {
                 sensorManager.getRotationMatrixFromVector(rMatrix, event.values);
                 sensorManager.getOrientation(rMatrix, event.values);
 
-                Log.i("MovementRecog", String.format("x: %.3f\t y: %.3f\t z: %.3f", event.values[0]*(180f/Math.PI),
-                        event.values[1]*(180f/Math.PI),
-                        event.values[2]*(180f/Math.PI)));
+//                Log.i("MovementRecog", String.format("x: %.3f\t y: %.3f\t z: %.3f", event.values[0]*(180f/Math.PI),
+//                        event.values[1]*(180f/Math.PI),
+//                        event.values[2]*(180f/Math.PI)));
             }
         }
 
