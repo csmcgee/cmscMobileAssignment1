@@ -3,6 +3,7 @@
     package="cmsc491.assignment1" >
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <service
         android:name=".domain.MovementRecogService"

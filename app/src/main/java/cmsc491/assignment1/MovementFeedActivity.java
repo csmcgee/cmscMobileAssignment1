@@ -4,26 +4,17 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import org.joda.time.DateTime;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import cmsc491.assignment1.domain.activityRecog.Movement;
 import cmsc491.assignment1.domain.impl.MFAdapter;
 
 
@@ -37,17 +28,18 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             MovementRecogService.MRBinder binder = (MovementRecogService.MRBinder) service;
             mService = binder.getService();
+
+            // when service is available start polling
+            Log.i("MovementRecog", "Starting poller.");
+            mrPoller.run();
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName name) {
-
-        }
+        public void onServiceDisconnected(ComponentName name) { }
     };
 
     // use this adapter to let list view know that it has been updated
     public static final MFAdapter mfAdapter = new MFAdapter();
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,23 +56,9 @@ public class MovementFeedActivity extends ActionBarActivity {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-
-                // ListView Clicked item index
-                int itemPosition     = position;
-
-                // ListView Clicked item value
-                Movement  itemValue    = (Movement) listView.getItemAtPosition(position);
-
-                // Show Alert
-                Toast.makeText(getApplicationContext(),
-                        "Position :" + itemPosition + "  ListItem : " + itemValue.getTypeString(), Toast.LENGTH_LONG)
-                        .show();
-
-            }
+                                    int position, long id) { }
 
         });
-
     }
 
     protected void onStart(){
@@ -88,7 +66,20 @@ public class MovementFeedActivity extends ActionBarActivity {
         // Spawn service
         Intent intent = new Intent(this, MovementRecogService.class);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        mrPoller.run();
+    }
+
+    protected void onResume(){
+        super.onResume();
+
+        // if service is already bound
+        if(mService != null)
+            mrPoller.run();
+    }
+
+    protected void onPause(){
+        super.onPause();
+        // stop polling to update activity on pause.
+        mrPoller.stop();
     }
 
     /**
@@ -96,9 +87,14 @@ public class MovementFeedActivity extends ActionBarActivity {
      */
     protected void onStop(){
         super.onStop();
-        unbindService(mConnection);
+        Log.i("MovementRecog", "Activity stopped (hidden).");
         mrPoller.stop();
-        // close file writer/reader here.
+    }
+
+    protected void onDestroy(){
+        super.onDestroy();
+        Log.i("MovementRecog", "Activity destroyed");
+        unbindService(mConnection);
     }
 
     @Override
@@ -139,7 +135,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void pollService(){
 
             // poll service
-
+            mfAdapter.setMovements(mService.getRecentMovements());
             mfAdapter.notifyDataSetChanged();
         }
 
@@ -147,7 +143,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void run() {
             pollService();
             // every two minutes
-            mHandler.postDelayed(this, 120 * 1000);
+            mHandler.postDelayed(this, 60 * 1000);
         }
 
         public void stop(){
