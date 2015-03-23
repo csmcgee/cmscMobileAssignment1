@@ -117,10 +117,10 @@ public class MovementRecogService extends Service {
 
                 // runs every 15 seconds
                 if(data_iter >= 60) {
-                    xVariance = calcVariance(accelData[0], calcMean(accelData[0]));
+//                    xVariance = calcVariance(accelData[0], calcMean(accelData[0]));
                     Log.i(Movement.APP_TAG, String.format("Y Variance: %f", yVariance));
                     yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
-                    zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
+//                    zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
 
                     yAngleMean = Math.abs(calcMean(angles[1]));
                     Log.i(Movement.APP_TAG, String.format("Y Angle mean: %f", yAngleMean));
@@ -128,7 +128,7 @@ public class MovementRecogService extends Service {
                     /**
                      * Point assigning logic here.
                      */
-                    if(yVariance >= 1f){ // Person was moving/walking.
+                    if(yVariance >= 0.5f){ // Person was moving/walking.
                         points[WALKING]++;
                     }
                     else if(yAngleMean >= 45 && yAngleMean <= 135 ){ // Person was sitting

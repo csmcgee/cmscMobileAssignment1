@@ -143,8 +143,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         @Override
         public void run() {
             pollService();
-            // every two minutes
-            mHandler.postDelayed(this, 120 * 1000);
+            mHandler.postDelayed(this, 1000);
         }
 
         public void stop(){
