@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import cmsc491.assignment1.domain.activityRecog.Movement;
 import cmsc491.assignment1.domain.impl.MFAdapter;
 
 
@@ -30,7 +31,7 @@ public class MovementFeedActivity extends ActionBarActivity {
             mService = binder.getService();
 
             // when service is available start polling
-            Log.i("MovementRecog", "Starting poller.");
+            Log.i(Movement.APP_TAG, "Starting poller.");
             mrPoller.run();
         }
 
@@ -87,13 +88,13 @@ public class MovementFeedActivity extends ActionBarActivity {
      */
     protected void onStop(){
         super.onStop();
-        Log.i("MovementRecog", "Activity stopped (hidden).");
+        Log.i(Movement.APP_TAG, "Activity stopped (hidden).");
         mrPoller.stop();
     }
 
     protected void onDestroy(){
         super.onDestroy();
-        Log.i("MovementRecog", "Activity destroyed");
+        Log.i(Movement.APP_TAG, "Activity destroyed");
         unbindService(mConnection);
     }
 
@@ -143,7 +144,7 @@ public class MovementFeedActivity extends ActionBarActivity {
         public void run() {
             pollService();
             // every two minutes
-            mHandler.postDelayed(this, 60 * 1000);
+            mHandler.postDelayed(this, 120 * 1000);
         }
 
         public void stop(){

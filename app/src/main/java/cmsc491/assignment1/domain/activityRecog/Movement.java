@@ -14,6 +14,8 @@ public class Movement {
     private Type movementType;
     private DateTime startTime, endTime;
 
+    public static final String APP_TAG = "MovementRecog";
+
     private static final String SITTING = "Sitting";
     private static final String WALKING = "Walking";
     private static final String SLEEPING = "Sleeping";

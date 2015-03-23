@@ -48,10 +48,11 @@ public class MovementRecogService extends Service {
 
     private AccelerometerInfo accel;
     private GyroscopeInfo gyro;
+    private Runnable recogRunner;
 
     private final int ELAPSED_TIME_SECONDS = 15;
     // For now make a decision every minute
-    private final int NUM_OF_ITERATIONS = 4;
+    private final int NUM_OF_ITERATIONS = 8;
     private final int NUM_OF_AXIS = 3;
     private final int NUM_DATA_POINTS = 60;
     private final int WALKING = 0;
@@ -75,7 +76,7 @@ public class MovementRecogService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i("MovementRecog", "MovementRecogService onBind()");
+        Log.i(Movement.APP_TAG, "MovementRecogService onBind()");
         pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MovementRecog");
         wl.acquire();
@@ -97,7 +98,7 @@ public class MovementRecogService extends Service {
         // Initialize time
         time = new DateTime();
 
-        mHandler.postDelayed(new Runnable() {
+        recogRunner = new Runnable() {
             @Override
             public void run() {
                 //Insert variance logic here with accelData points;
@@ -113,12 +114,12 @@ public class MovementRecogService extends Service {
                 // runs every 15 seconds
                 if(data_iter >= 60) {
                     xVariance = calcVariance(accelData[0], calcMean(accelData[0]));
-                    Log.i("MovementRecog", String.format("Y Variance: %f", yVariance));
+                    Log.i(Movement.APP_TAG, String.format("Y Variance: %f", yVariance));
                     yVariance = calcVariance(accelData[1], calcMean(accelData[1]));
                     zVariance = calcVariance(accelData[2], calcMean(accelData[2]));
 
                     yAngleMean = Math.abs(calcMean(angles[1]));
-                    Log.i("MovementRecog", String.format("Y Angle mean: %f", yAngleMean));
+                    Log.i(Movement.APP_TAG, String.format("Y Angle mean: %f", yAngleMean));
 
                     /**
                      * Point assigning logic here.
@@ -137,7 +138,7 @@ public class MovementRecogService extends Service {
 
                 // Reached decision period.
                 if(iter_counter >= NUM_OF_ITERATIONS){
-                    Log.i("MovementRecog", String.format("Decision period reached for %s - %s", time.toString(), new DateTime().toString()));
+                    Log.i(Movement.APP_TAG, String.format("Decision period reached for %s - %s", time.toString(), new DateTime().toString()));
                     // reset counter
                     iter_counter = 0;
 
@@ -156,7 +157,7 @@ public class MovementRecogService extends Service {
                      * Review points and make final decision here.
                      */
                     trackMovement(new Movement(type, time, new DateTime()));
-                    Log.i("MovementRecog", String.format("Movement type determined: %s", Movement.getTypeString(type)));
+                    Log.i(Movement.APP_TAG, String.format("Movement type determined: %s", Movement.getTypeString(type)));
                     time = new DateTime(); // reinitialize date/time for next interval
                     Arrays.fill(points, 0);
 
@@ -165,13 +166,17 @@ public class MovementRecogService extends Service {
                 }else
                     mHandler.postDelayed(this, 250); // If not decision time then wait 250 milliseconds.
             }
-        }, 0);
+        };
+
+        mHandler.postDelayed(recogRunner, 0);
 
         return mBinder;
     }
 
     public void onDestroy(){
         super.onDestroy();
+        Log.i(Movement.APP_TAG, "Service onDestroy()");
+        mHandler.removeCallbacks(recogRunner);
         wl.release();
     }
 
@@ -201,7 +206,7 @@ public class MovementRecogService extends Service {
         for(float f:points){
             sums += (f - mean) * (f - mean);
         }
-        return sums/(points.length -1);
+        return sums/(points.length - 1);
 
     }
 
@@ -287,7 +292,7 @@ public class MovementRecogService extends Service {
                     }
 
                 }catch(Exception e){
-                    Log.e("MovementRecog", "Unable to write to file system.");
+                    Log.e(Movement.APP_TAG, "Unable to write to file system.");
                 }
 
             }
@@ -300,7 +305,7 @@ public class MovementRecogService extends Service {
                     printWriter.append(m.toString());
                 }
             }catch(Exception e){
-                Log.i("MovementRecog", "Unable to write to file.");
+                Log.e(Movement.APP_TAG, "Unable to write to file.");
             }
             printWriter.close();
         }
@@ -332,7 +337,7 @@ public class MovementRecogService extends Service {
                 }
                 Collections.reverse(movements);
             }catch(Exception e){
-                Log.i("MovementRecog", "Could not read file.");
+                Log.e(Movement.APP_TAG, "Could not read file.");
             }
             return movements;
         }
